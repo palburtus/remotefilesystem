@@ -3,6 +3,9 @@ Simple Wrapper for SFTP File System Operations Using [Renci.SSH](https://github.
 
 **Running Integration Tests**
 In order to run unit/integration tests included in this project you'll need an FTP server with SFTP support.
+
+Your FTP account will have to have read/write/delete permissions
+
 You will also have to change the values in TestFtpCredtianls in the _RemoteFileDirectory.FTP.Tests_ package of the _RemoteFileDirectoryTests_ project.  
 Below is an example:
 
