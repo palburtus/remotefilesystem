@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using RemoteFileDirectory.Utils;
 using Renci.SshNet;
 
 namespace RemoteFileDirectory.FTP
@@ -10,27 +11,25 @@ namespace RemoteFileDirectory.FTP
     internal class SftpFileSystem : IFileSystem
     {
         private readonly ISftpCredentials _credentials;
-        private SftpClient? _client;
+        private readonly SftpClient? _client;
 
         public SftpFileSystem(ISftpCredentials credentials)
         {
             _credentials = credentials;
-        }
 
-        public bool Connect()
-        {
             var connectionInfo = new ConnectionInfo(_credentials.RemoteUrl,
                 _credentials.UserName,
                 new PasswordAuthenticationMethod(_credentials.UserName, _credentials.Password),
                 new PrivateKeyAuthenticationMethod(_credentials.AuthenticationMethod));
 
             _client = new SftpClient(connectionInfo);
+        }
 
-            if (!IsTrustedConnection())
-            {
-                return false;
-            }
-            
+        public bool IsConnected()
+        {
+            if (!IsTrustedConnection()) return false;
+            if (_client == null) return false;
+
             _client.Connect();
             return true;
             
@@ -38,41 +37,78 @@ namespace RemoteFileDirectory.FTP
 
         public void UploadFiles(string remoteDirectory, FileInfo fileInfo)
         {
-            throw new NotImplementedException();
+            UploadFiles(remoteDirectory, new FileInfo[] {fileInfo});
         }
 
         public void UploadFiles(string remoteDirectory, FileInfo[] fileInfos)
         {
-            throw new NotImplementedException();
+            if (!_client!.Exists(remoteDirectory))
+            {
+                _client.CreateDirectory(remoteDirectory);
+            }
+
+            foreach (FileInfo fileInfo in fileInfos)
+            {
+                using FileStream fs = fileInfo.OpenRead();
+                using StreamReader sr = new StreamReader(fs);
+
+                string remoteFilePath = $"/{remoteDirectory}/{fileInfo.Name}";
+
+                _client.UploadFile(sr.BaseStream, remoteFilePath, true);
+            }
         }
 
         public List<string> ListFilesAndFoldersInDirectory(string remoteDirectory)
         {
-            throw new NotImplementedException();
+            var files = _client!.ListDirectory(remoteDirectory);
+
+            return files.Select(file => file.Name).ToList();
         }
 
         public void DeleteFilesAndFoldersInDirectory(string remoteDirectory)
         {
-            throw new NotImplementedException();
+            var files = _client!.ListDirectory(remoteDirectory);
+
+            foreach (var file in files)
+            {
+                _client.DeleteFile($"{remoteDirectory}/{file.Name}");
+            }
         }
 
         public void DeleteDirectory(string remoteDirectory)
         {
-            throw new NotImplementedException();
+            _client!.DeleteDirectory(remoteDirectory);
         }
 
         public void MoveDirectory(string currentPath, string targetPath)
         {
-            throw new NotImplementedException();
+            _client!.RenameFile(currentPath, targetPath);
         }
 
         private bool IsTrustedConnection()
         {
-            //byte[] expectedFingerprintHex =
-                //HexByteConverter.ConvertHexStringToByteArray(_credentials.ServerFingerprintHex);
+            byte[] expectedFingerPrint =
+              new HexByteConverter().ConvertHexStringToByteArray(_credentials.ServerFingerprintHex);
 
+            bool isTrusted = true;
 
-            return true;
+            _client!.HostKeyReceived += (sender, e) =>
+            {
+                if (expectedFingerPrint.Length == e.FingerPrint.Length)
+                {
+                    if (expectedFingerPrint.Where((t, i) => t != e.FingerPrint[i]).Any())
+                    {
+                        isTrusted = false;
+                    }
+                }
+                else
+                {
+                    isTrusted = false;
+                }
+            };
+            
+
+            return isTrusted;
         }
     }
 }
