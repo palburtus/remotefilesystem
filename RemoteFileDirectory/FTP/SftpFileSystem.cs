@@ -8,7 +8,7 @@ using Renci.SshNet;
 
 namespace RemoteFileDirectory.FTP
 {
-    internal class SftpFileSystem : IFileSystem
+    public class SftpFileSystem : IFileSystem
     {
         private readonly ISftpCredentials _credentials;
         private readonly SftpClient? _client;
