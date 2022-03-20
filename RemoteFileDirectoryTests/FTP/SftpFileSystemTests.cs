@@ -14,59 +14,61 @@ namespace RemoteFileDirectory.FTP.Tests
     {
         private const string RemoteSftpDirectory = "unit_test_base_directory";
         private const string NewDirectory = "new_directory";
-        private const string RemoteTestDeploymentDirectory = "unit_tests_sample_deployment";
-        private const string RemoteTestStagingDirectory = "unit_tests_deployment_stg";
+        private const string RemoteTestCopyTooDirectory = "unit_tests_copy_to";
+        private const string RemoteTestCopyFromDirectory = "unit_tests_copy_from";
+
+        private IFileSystem? _sftpClient;
 
         [ClassInitialize]
         public static void SetUpClass(TestContext context)
         {
-            IFileSystem sftpClient = new SftpFileSystem(new TestSftpCredentials());
-            sftpClient.DeleteFilesAndFoldersInDirectory(RemoteTestStagingDirectory);
+            IFileSystem _sftpClient = new SftpFileSystem(new TestSftpCredentials());
+            Assert.IsTrue(_sftpClient.Connect());
+
+            //_sftpClient.DeleteFilesAndFoldersInDirectory(RemoteTestCopyFromDirectory);
+
+            
 
             string sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SampleData/SFtpTestFile1.txt");
             FileInfo fi = new FileInfo(sourceFilePath);
-            sftpClient.UploadFiles($"{RemoteTestDeploymentDirectory}/container_directory", fi);
+            _sftpClient.UploadFiles($"{RemoteSftpDirectory}/{RemoteTestCopyTooDirectory}", fi);
         }
 
         [TestInitialize]
         public void SetUpEachTest()
         {
             IFileSystem sftpClient = new SftpFileSystem(new TestSftpCredentials());
-            sftpClient.DeleteFilesAndFoldersInDirectory(RemoteSftpDirectory);
+            sftpClient.Connect();
+            sftpClient!.DeleteFilesAndFoldersInDirectory($"{RemoteSftpDirectory}");
         }
 
         [TestMethod]
         public void MoveDirectory_MovesADirectoryFromCurrentPathToAnother_ShouldSucceed()
         {
-            IFileSystem sftpClient = new SftpFileSystem(new TestSftpCredentials());
-            sftpClient.MoveDirectory($"{RemoteTestDeploymentDirectory}/container_directory",
-                string.Format("{0}/container_directory", RemoteTestStagingDirectory));
+            _sftpClient.MoveDirectory($"{RemoteTestCopyTooDirectory}",
+                $"{RemoteTestCopyFromDirectory}");
 
         }
 
         [TestMethod]
         public void Connect_ConnectsToTheSFTPClient_ShouldSucceed()
         {
-            IFileSystem sftpClient = new SftpFileSystem(new TestSftpCredentials());
-
-            Assert.IsTrue(sftpClient.IsConnected());
+            Assert.IsTrue(_sftpClient.Connect());
         }
 
         [TestMethod]
         public void UploadFile_SFTPsSingleFileToConfiguredLocation_ShouldSucceed()
         {
-            IFileSystem sftpClient = new SftpFileSystem(new TestSftpCredentials());
-
             string sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SampleData/SFtpTestFile1.txt");
             FileInfo fi = new FileInfo(sourceFilePath);
 
             int actual = 0;
 
-            sftpClient.UploadFiles(RemoteSftpDirectory, fi);
+            _sftpClient.UploadFiles(RemoteSftpDirectory, fi);
 
             int count = 0;
 
-            List<string> files = sftpClient.ListFilesAndFoldersInDirectory(RemoteSftpDirectory);
+            List<string> files = _sftpClient.ListFilesAndFoldersInDirectory(RemoteSftpDirectory);
 
             Assert.AreEqual(31, actual);
             Assert.AreEqual(1, count);
@@ -93,8 +95,6 @@ namespace RemoteFileDirectory.FTP.Tests
         [TestMethod]
         public void UploadFiles_SFTPsMultipleFilesToConfiguredLocation_ShouldSucceed()
         {
-            IFileSystem sftpClient = new SftpFileSystem(new TestSftpCredentials());
-
             string sourceFilePathOne = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SampleData/SFtpTestFile1.txt");
             FileInfo fiOne = new FileInfo(sourceFilePathOne);
 
@@ -103,9 +103,9 @@ namespace RemoteFileDirectory.FTP.Tests
 
             FileInfo[] fileInfos = new FileInfo[] { fiOne, fiTwo };
 
-            sftpClient.UploadFiles(RemoteSftpDirectory, fileInfos);
+            _sftpClient.UploadFiles(RemoteSftpDirectory, fileInfos);
 
-            List<string> files = sftpClient.ListFilesAndFoldersInDirectory(RemoteSftpDirectory);
+            List<string> files = _sftpClient.ListFilesAndFoldersInDirectory(RemoteSftpDirectory);
 
             Assert.AreEqual(2, files.Count);
             Assert.AreEqual("SFtpTestFile1.txt", files[0]);

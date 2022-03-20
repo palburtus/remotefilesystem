@@ -25,7 +25,7 @@ namespace RemoteFileDirectory.FTP
             _client = new SftpClient(connectionInfo);
         }
 
-        public bool IsConnected()
+        public bool Connect()
         {
             if (!IsTrustedConnection()) return false;
             if (_client == null) return false;

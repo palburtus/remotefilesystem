@@ -2,7 +2,7 @@
 {
     public interface IFileSystem
     {
-        bool IsConnected();
+        bool Connect();
         void UploadFiles(string remoteDirectory, FileInfo fileInfo);
         void UploadFiles(string remoteDirectory, FileInfo[] fileInfos);
         List<string> ListFilesAndFoldersInDirectory(string remoteDirectory);
