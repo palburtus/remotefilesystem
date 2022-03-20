@@ -14,6 +14,7 @@ namespace RemoteFileDirectory.FTP.Tests
     {
         private const string RemoteSftpDirectory = "unit_test_base_directory";
         private const string NewDirectory = "new_directory";
+        private const string DirectoryToCreate = "directory_to_create";
         private const string CopyToDirectoryName = "unit_test_copy_to";
         private const string CopyFromDirectoryName = "unit_test_copy_from";
 
@@ -24,11 +25,36 @@ namespace RemoteFileDirectory.FTP.Tests
         {
             _sftpClient = new SftpFileSystem(new TestSftpCredentials());
             Assert.IsTrue(_sftpClient.Connect());
+
+            if (!_sftpClient.DoesDirectoryExist(RemoteSftpDirectory))
+            {
+                _sftpClient.CreateDirectory(RemoteSftpDirectory);
+            }
+
+            if (!_sftpClient.DoesDirectoryExist(CopyToDirectoryName))
+            {
+                _sftpClient.CreateDirectory(CopyToDirectoryName);
+            }
+
+            if (!_sftpClient.DoesDirectoryExist(NewDirectory))
+            {
+                _sftpClient.CreateDirectory(NewDirectory);
+            }
+
+            if (_sftpClient.DoesDirectoryExist(CopyFromDirectoryName))
+            {
+                _sftpClient.CreateDirectory(CopyFromDirectoryName);
+            }
+
+            if (_sftpClient.DoesDirectoryExist(DirectoryToCreate))
+            {
+                _sftpClient.DeleteDirectory(DirectoryToCreate);
+            }
+
             _sftpClient.MoveDirectory(CopyToDirectoryName, CopyFromDirectoryName);
 
             _sftpClient.DeleteFilesAndFoldersInDirectory(RemoteSftpDirectory);
             
-
             string sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SampleData/SFtpTestFile1.txt");
             FileInfo fi = new FileInfo(sourceFilePath);
             _sftpClient.UploadFiles($"{RemoteSftpDirectory}", fi);
@@ -39,6 +65,14 @@ namespace RemoteFileDirectory.FTP.Tests
         {
             _sftpClient!.Connect();
             _sftpClient!.DeleteFilesAndFoldersInDirectory(RemoteSftpDirectory);
+        }
+
+        [TestMethod]
+        public void CreateDirectroy_CreatesADirectoryAndUsesIsCreatedToConfirm_ShouldSucceed()
+        {
+            _sftpClient!.CreateDirectory(DirectoryToCreate);
+
+            Assert.IsTrue(_sftpClient.DoesDirectoryExist(DirectoryToCreate));
         }
 
         [TestMethod]

@@ -62,6 +62,16 @@ namespace RemoteFileDirectory.FTP
             }
         }
 
+        public void CreateDirectory(string remoteDirectory)
+        {
+            _client!.CreateDirectory(remoteDirectory);
+        }
+
+        public bool DoesDirectoryExist(string remoteDirectory)
+        {
+            return _client!.Exists(remoteDirectory);
+        }
+
         public List<string> ListFilesAndFoldersInDirectory(string remoteDirectory)
         {
             var files = _client!.ListDirectory(remoteDirectory);
