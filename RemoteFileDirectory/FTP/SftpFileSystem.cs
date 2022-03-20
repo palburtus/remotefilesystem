@@ -29,10 +29,14 @@ namespace RemoteFileDirectory.FTP
         {
             if (!IsTrustedConnection()) return false;
             if (_client == null) return false;
+            bool isConnected = _client.IsConnected;
 
-            _client.Connect();
-            return true;
-            
+            if (!isConnected)
+            {
+                _client.Connect();
+            }
+
+            return _client.IsConnected;
         }
 
         public void UploadFiles(string remoteDirectory, FileInfo fileInfo)

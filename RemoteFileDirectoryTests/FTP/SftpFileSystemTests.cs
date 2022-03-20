@@ -14,46 +14,44 @@ namespace RemoteFileDirectory.FTP.Tests
     {
         private const string RemoteSftpDirectory = "unit_test_base_directory";
         private const string NewDirectory = "new_directory";
-        private const string RemoteTestCopyTooDirectory = "unit_tests_copy_to";
-        private const string RemoteTestCopyFromDirectory = "unit_tests_copy_from";
+        private const string CopyToDirectoryName = "unit_test_copy_to";
+        private const string CopyFromDirectoryName = "unit_test_copy_from";
 
-        private IFileSystem? _sftpClient;
+        private static IFileSystem? _sftpClient;
 
         [ClassInitialize]
         public static void SetUpClass(TestContext context)
         {
-            IFileSystem _sftpClient = new SftpFileSystem(new TestSftpCredentials());
+            _sftpClient = new SftpFileSystem(new TestSftpCredentials());
             Assert.IsTrue(_sftpClient.Connect());
+            _sftpClient.MoveDirectory(CopyToDirectoryName, CopyFromDirectoryName);
 
-            //_sftpClient.DeleteFilesAndFoldersInDirectory(RemoteTestCopyFromDirectory);
-
+            _sftpClient.DeleteFilesAndFoldersInDirectory(RemoteSftpDirectory);
             
 
             string sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SampleData/SFtpTestFile1.txt");
             FileInfo fi = new FileInfo(sourceFilePath);
-            _sftpClient.UploadFiles($"{RemoteSftpDirectory}/{RemoteTestCopyTooDirectory}", fi);
+            _sftpClient.UploadFiles($"{RemoteSftpDirectory}", fi);
         }
 
         [TestInitialize]
         public void SetUpEachTest()
         {
-            IFileSystem sftpClient = new SftpFileSystem(new TestSftpCredentials());
-            sftpClient.Connect();
-            sftpClient!.DeleteFilesAndFoldersInDirectory($"{RemoteSftpDirectory}");
+            _sftpClient!.Connect();
+            _sftpClient!.DeleteFilesAndFoldersInDirectory(RemoteSftpDirectory);
         }
 
         [TestMethod]
         public void MoveDirectory_MovesADirectoryFromCurrentPathToAnother_ShouldSucceed()
         {
-            _sftpClient.MoveDirectory($"{RemoteTestCopyTooDirectory}",
-                $"{RemoteTestCopyFromDirectory}");
+            _sftpClient!.MoveDirectory(CopyFromDirectoryName, CopyToDirectoryName);
 
         }
 
         [TestMethod]
         public void Connect_ConnectsToTheSFTPClient_ShouldSucceed()
         {
-            Assert.IsTrue(_sftpClient.Connect());
+            Assert.IsTrue(_sftpClient!.Connect());
         }
 
         [TestMethod]
@@ -61,17 +59,11 @@ namespace RemoteFileDirectory.FTP.Tests
         {
             string sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SampleData/SFtpTestFile1.txt");
             FileInfo fi = new FileInfo(sourceFilePath);
-
-            int actual = 0;
-
-            _sftpClient.UploadFiles(RemoteSftpDirectory, fi);
-
-            int count = 0;
-
+            
+            _sftpClient!.UploadFiles(RemoteSftpDirectory, fi);
+            
             List<string> files = _sftpClient.ListFilesAndFoldersInDirectory(RemoteSftpDirectory);
-
-            Assert.AreEqual(31, actual);
-            Assert.AreEqual(1, count);
+            
             Assert.AreEqual(1, files.Count);
             Assert.AreEqual("SFtpTestFile1.txt", files[0]);
         }
@@ -79,14 +71,12 @@ namespace RemoteFileDirectory.FTP.Tests
         [TestMethod]
         public void UploadFiles_UploadToDirectoryThatDoesNotExist_ShouldCreateDirectoryAndSucceed()
         {
-            IFileSystem sftpClient = new SftpFileSystem(new TestSftpCredentials());
-
             string sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SampleData/SFtpTestFile1.txt");
             FileInfo fi = new FileInfo(sourceFilePath);
             
-            sftpClient.UploadFiles(NewDirectory, fi);
+            _sftpClient!.UploadFiles(NewDirectory, fi);
             
-            List<string> files = sftpClient.ListFilesAndFoldersInDirectory(NewDirectory);
+            List<string> files = _sftpClient.ListFilesAndFoldersInDirectory(NewDirectory);
 
             Assert.AreEqual(1, files.Count);
             Assert.AreEqual("SFtpTestFile1.txt", files[0]);
@@ -101,9 +91,9 @@ namespace RemoteFileDirectory.FTP.Tests
             string sourceFilePathTwo = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SampleData/SFtpTestFile2.txt");
             FileInfo fiTwo = new FileInfo(sourceFilePathTwo);
 
-            FileInfo[] fileInfos = new FileInfo[] { fiOne, fiTwo };
+            FileInfo[] fileInfos =  { fiOne, fiTwo };
 
-            _sftpClient.UploadFiles(RemoteSftpDirectory, fileInfos);
+            _sftpClient!.UploadFiles(RemoteSftpDirectory, fileInfos);
 
             List<string> files = _sftpClient.ListFilesAndFoldersInDirectory(RemoteSftpDirectory);
 
